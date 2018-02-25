@@ -22,25 +22,29 @@ func init() {
 	log.Debugf("%s Version: %s", AppName, AppVersion)
 }
 
-
 func main() {
 	log.Infof("Start")
 
 	var nameSpace string
-	nameSpace = "default"
 	if len(os.Getenv("KUBERNETES_NAMESPACE")) > 0 {
 		nameSpace = os.Getenv("KUBERNETES_NAMESPACE")
+	} else {
+		nameSpace = "default"
 	}
 	log.Debugf("Namespace: %s", nameSpace)
 
 	for {
-		time.Sleep(5*time.Second)
+		time.Sleep(5 * time.Second)
 		client, err := k8sClient("")
 		if err != nil {
-			log.Panic("K8s connection Failed!")
+			log.Panic("K8s connection Failed! Reason:", err)
 		}
 
 		ingress, err := client.ExtensionsV1beta1().Ingresses(nameSpace).List(metav1.ListOptions{})
+		if err != nil {
+			log.Errorf("Get ingress list failed! -> %s ", err)
+		}
+
 		var ingSec []string
 		for _, ing := range ingress.Items {
 			value, ok := ing.Annotations["ingress.kubernetes.io/auth-secret"]
@@ -80,7 +84,6 @@ func hashBcrypt(password string) (hash string, err error) {
 	}
 	return string(passwordBytes), nil
 }
-
 
 func k8sClient(k8sConfigFile string) (*kubernetes.Clientset, error) {
 	var (
