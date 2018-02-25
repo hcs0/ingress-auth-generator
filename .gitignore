@@ -1,0 +1,7 @@
+_state*
+.idea*
+.DS_Store
+bin/*
+.idea/
+IngressAuthGenerator
+*.swp

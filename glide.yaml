@@ -1,0 +1,14 @@
+package: github.com/banzaicloud/IngressAuthGenerator
+import:
+- package: github.com/sirupsen/logrus
+- package: golang.org/x/crypto
+  subpackages:
+  - bcrypt
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/apis/meta/v1
+- package: k8s.io/client-go
+  subpackages:
+  - kubernetes
+  - rest
+  - tools/clientcmd
