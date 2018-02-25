@@ -34,12 +34,12 @@ func main() {
 	log.Debugf("Namespace: %s", nameSpace)
 
 	client, err := k8sClient("")
+	if err != nil {
+		log.Panic("K8s connection Failed! Reason:", err)
+	}
 
 	for {
 		time.Sleep(5 * time.Second)
-		if err != nil {
-			log.Panic("K8s connection Failed! Reason:", err)
-		}
 
 		ingress, err := client.ExtensionsV1beta1().Ingresses(nameSpace).List(metav1.ListOptions{})
 		if err != nil {
