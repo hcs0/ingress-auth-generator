@@ -33,9 +33,10 @@ func main() {
 	}
 	log.Debugf("Namespace: %s", nameSpace)
 
+	client, err := k8sClient("")
+
 	for {
 		time.Sleep(5 * time.Second)
-		client, err := k8sClient("")
 		if err != nil {
 			log.Panic("K8s connection Failed! Reason:", err)
 		}
@@ -93,10 +94,10 @@ func k8sClient(k8sConfigFile string) (*kubernetes.Clientset, error) {
 
 	if k8sConfigFile == "" {
 		k8sConfigFile = os.Getenv("kubeConfig")
-		log.Debugln("kubeConfig:", k8sConfigFile)
 	}
 
 	if k8sConfigFile != "" {
+		log.Debugln("kubeConfig:", k8sConfigFile)
 		config, err = clientcmd.BuildConfigFromFlags("", k8sConfigFile)
 	} else {
 		log.Infoln("Use K8S InCluster Config.")
