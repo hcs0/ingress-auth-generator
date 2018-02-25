@@ -76,21 +76,24 @@ func main() {
 				continue
 			}
 
-				passwordHash, err := hashBcrypt(string(password))
-				if err != nil {
-					log.Errorf("Password crypt failed!")
-					continue
-				}
-				newAuth := fmt.Sprintf("%s:%s", username, passwordHash)
-				log.Debugf("New Auth: %s", newAuth)
-
-				secret.Data["auth"] = []byte(newAuth)
-				client.CoreV1().Secrets(nameSpace).Update(secret)
-				log.Infof("Secret Update Done!")
+			passwordHash, err := hashBcrypt(string(password))
+			if err != nil {
+				log.Errorf("Password crypt failed!")
+				continue
 			}
+			newAuth := fmt.Sprintf("%s:%s", username, passwordHash)
+			log.Debugf("New Auth: %s", newAuth)
+
+			secret.Data["auth"] = []byte(newAuth)
+			delete(secret.Data, "username")
+			log.Debugf("username secret key removed.")
+			delete(secret.Data, "password")
+			log.Debugf("password secret key removed.")
+			client.CoreV1().Secrets(nameSpace).Update(secret)
+			log.Infof("Secret Update Done!")
 		}
 	}
-
+}
 
 func hashBcrypt(password string) (hash string, err error) {
 	passwordBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
