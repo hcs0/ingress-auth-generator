@@ -1,5 +1,4 @@
-FROM golang:1.9-alpine
-FROM golang:1.9.3-alpine3.7
+FROM golang:1.9.4-alpine3.7
 
 ADD . /go/src/github.com/banzaicloud/IngressAuthGenerator
 WORKDIR /go/src/github.com/banzaicloud/IngressAuthGenerator

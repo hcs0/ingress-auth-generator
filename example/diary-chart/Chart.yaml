@@ -1,0 +1,9 @@
+name: diary
+home: https://banzaicloud.com
+sources:
+  - https://github.com/banzaicloud/IngressAuthGenerator
+version: 0.0.1
+description: Example Helm chart for IngressAuthGenerator
+keywords:
+- basicauth
+- ingressauthgenerator

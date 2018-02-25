@@ -5,11 +5,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 
+	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -22,25 +22,31 @@ func init() {
 	log.Debugf("%s Version: %s", AppName, AppVersion)
 }
 
-
 func main() {
 	log.Infof("Start")
 
 	var nameSpace string
-	nameSpace = "default"
 	if len(os.Getenv("KUBERNETES_NAMESPACE")) > 0 {
 		nameSpace = os.Getenv("KUBERNETES_NAMESPACE")
+	} else {
+		nameSpace = "default"
 	}
 	log.Debugf("Namespace: %s", nameSpace)
 
+	client, err := k8sClient("")
+	if err != nil {
+		log.Panic("K8s connection Failed! Reason:", err)
+	}
+
 	for {
-		time.Sleep(5*time.Second)
-		client, err := k8sClient("")
-		if err != nil {
-			log.Panic("K8s connection Failed!")
-		}
+		time.Sleep(5 * time.Second)
 
 		ingress, err := client.ExtensionsV1beta1().Ingresses(nameSpace).List(metav1.ListOptions{})
+		if err != nil {
+			log.Errorf("Get ingress list failed! -> %s ", err)
+			continue
+		}
+
 		var ingSec []string
 		for _, ing := range ingress.Items {
 			value, ok := ing.Annotations["ingress.kubernetes.io/auth-secret"]
@@ -53,24 +59,40 @@ func main() {
 			secret, err := client.CoreV1().Secrets(nameSpace).Get(secretName, metav1.GetOptions{})
 			if err != nil {
 				fmt.Errorf("K8S get Secret Failed: %v", err)
+				continue
 			}
-			log.Debugf("Check %q Secret Content. --> auth: %q", secretName, secret.Data["auth"])
-			if secret.Data["auth"] == nil && secret.Data["username"] != nil && secret.Data["password"] != nil {
-				passwordHash, err := hashBcrypt(string(secret.Data["password"]))
-				if err != nil {
-					log.Errorf("Password crypt failed!")
-					continue
-				}
-				newAuth := fmt.Sprintf("%s:%s", secret.Data["username"], passwordHash)
-				log.Debugf("New Auth: %s", newAuth)
+			_, ok := secret.Data["auth"]
+			if ok {
+				continue
+			}
+			username, ok := secret.Data["username"]
+			if !ok {
+				log.Debugf("Ingress secret username not found.")
+				continue
+			}
+			password, ok := secret.Data["password"]
+			if !ok {
+				log.Debugf("Ingress secret password not found.")
+				continue
+			}
 
-				secret.Data["auth"] = []byte(newAuth)
-				client.CoreV1().Secrets(nameSpace).Update(secret)
-				log.Infof("Secret Update Done!")
+			passwordHash, err := hashBcrypt(string(password))
+			if err != nil {
+				log.Errorf("Password crypt failed!")
+				continue
 			}
+			newAuth := fmt.Sprintf("%s:%s", username, passwordHash)
+			log.Debugf("New Auth: %s", newAuth)
+
+			secret.Data["auth"] = []byte(newAuth)
+			delete(secret.Data, "username")
+			log.Debugf("username secret key removed.")
+			delete(secret.Data, "password")
+			log.Debugf("password secret key removed.")
+			client.CoreV1().Secrets(nameSpace).Update(secret)
+			log.Infof("Secret Update Done!")
 		}
 	}
-
 }
 
 func hashBcrypt(password string) (hash string, err error) {
@@ -81,7 +103,6 @@ func hashBcrypt(password string) (hash string, err error) {
 	return string(passwordBytes), nil
 }
 
-
 func k8sClient(k8sConfigFile string) (*kubernetes.Clientset, error) {
 	var (
 		config *rest.Config
@@ -90,10 +111,10 @@ func k8sClient(k8sConfigFile string) (*kubernetes.Clientset, error) {
 
 	if k8sConfigFile == "" {
 		k8sConfigFile = os.Getenv("kubeConfig")
-		log.Debugln("kubeConfig:", k8sConfigFile)
 	}
 
 	if k8sConfigFile != "" {
+		log.Debugln("kubeConfig:", k8sConfigFile)
 		config, err = clientcmd.BuildConfigFromFlags("", k8sConfigFile)
 	} else {
 		log.Infoln("Use K8S InCluster Config.")

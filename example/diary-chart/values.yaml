@@ -1,0 +1,32 @@
+# Default values for diary
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+diary:
+  username: ""
+  password: ""
+
+traefik:
+  rbac:
+    enabled: true
+
+ghost: 
+  ## Ghost Blog name
+  ## ref: https://github.com/bitnami/bitnami-docker-ghost#environment-variables
+  ##
+  ghostBlogTitle: "My Secret Diary"
+
+  ## Kubernetes configuration
+  ## For minikube, set this to NodePort, elsewhere use LoadBalancer
+  ##
+  serviceType: ClusterIP
+
+
+  ## Configure resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+

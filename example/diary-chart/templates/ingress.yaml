@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "fullname" . }}
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/ssl-redirect: "false"
+    traefik.frontend.rule.type: PathPrefix
+    ingress.kubernetes.io/auth-type: "basic"
+    ingress.kubernetes.io/auth-secret: "{{ template "fullname" . }}"
+
+spec:
+  rules:
+  - http:
+      paths:
+        - path: "/"
+          backend:
+            serviceName: {{ .Release.Name }}-ghost
+            servicePort: 80

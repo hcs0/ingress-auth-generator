@@ -1,0 +1,12 @@
+dependencies:
+- name: traefik
+  version: 1.20.0
+  repository: https://kubernetes-charts.storage.googleapis.com/
+
+- name: ghost
+  version: 2.1.13
+  repository: https://kubernetes-charts.storage.googleapis.com/
+
+- name: ingressauthgenerator
+  version: 0.0.1
+  repository:  http://kubernetes-charts.banzaicloud.com/
