@@ -5,11 +5,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 
+	"golang.org/x/crypto/bcrypt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -44,6 +44,7 @@ func main() {
 		ingress, err := client.ExtensionsV1beta1().Ingresses(nameSpace).List(metav1.ListOptions{})
 		if err != nil {
 			log.Errorf("Get ingress list failed! -> %s ", err)
+			continue
 		}
 
 		var ingSec []string
@@ -58,15 +59,29 @@ func main() {
 			secret, err := client.CoreV1().Secrets(nameSpace).Get(secretName, metav1.GetOptions{})
 			if err != nil {
 				fmt.Errorf("K8S get Secret Failed: %v", err)
+				continue
 			}
-			log.Debugf("Check %q Secret Content. --> auth: %q", secretName, secret.Data["auth"])
-			if secret.Data["auth"] == nil && secret.Data["username"] != nil && secret.Data["password"] != nil {
-				passwordHash, err := hashBcrypt(string(secret.Data["password"]))
+			_, ok := secret.Data["auth"]
+			if ok {
+				continue
+			}
+			username, ok := secret.Data["username"]
+			if !ok {
+				log.Debugf("Ingress secret username not found.")
+				continue
+			}
+			password, ok := secret.Data["password"]
+			if !ok {
+				log.Debugf("Ingress secret password not found.")
+				continue
+			}
+
+				passwordHash, err := hashBcrypt(string(password))
 				if err != nil {
 					log.Errorf("Password crypt failed!")
 					continue
 				}
-				newAuth := fmt.Sprintf("%s:%s", secret.Data["username"], passwordHash)
+				newAuth := fmt.Sprintf("%s:%s", username, passwordHash)
 				log.Debugf("New Auth: %s", newAuth)
 
 				secret.Data["auth"] = []byte(newAuth)
@@ -76,7 +91,6 @@ func main() {
 		}
 	}
 
-}
 
 func hashBcrypt(password string) (hash string, err error) {
 	passwordBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
