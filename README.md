@@ -9,5 +9,10 @@ This simple `Golang` application helps you to transform your passwords from `k8s
 
 
 ## How can you use it?
+## tl;dr:
 
-Please take the exaple files to replace the placeholder variables, and apply them with [kubectl](https://kubernetes-v1-4.github.io/docs/user-guide/kubectl/kubectl_apply/).
+```bash
+$ helm repo add banzaicloud http://kubernetes-charts.banzaicloud.com
+$ helm repo update
+$ helm install banzaicloud/ingressauthgenerator
+```
