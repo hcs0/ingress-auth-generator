@@ -8,5 +8,5 @@ dependencies:
   repository: https://kubernetes-charts.storage.googleapis.com/
 
 - name: ingressauthgenerator
-  version: 0.0.1
+  version: 0.*-0
   repository:  http://kubernetes-charts.banzaicloud.com/
